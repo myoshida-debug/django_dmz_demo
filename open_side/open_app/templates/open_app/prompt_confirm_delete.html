@@ -1,0 +1,16 @@
+{% extends 'open_app/base.html' %}
+{% block content %}
+<div class="box">
+  <h2>prompt削除確認</h2>
+  <p>以下のファイルを削除しますか？</p>
+  <p><strong>{{ filename }}</strong></p>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="actions">
+      <button type="submit">削除する</button>
+      <a class="button" href="{% url 'open_index' %}">一覧へ戻る</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

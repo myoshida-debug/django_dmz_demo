@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>Open側 Django</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    .nav a { margin-right: 1rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: .5rem; }
+    textarea { width: 100%; }
+    .box { border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; }
+    .actions { display: flex; gap: .5rem; margin-top: 1rem; flex-wrap: wrap; }
+    button, a.button { padding: .6rem 1rem; text-decoration: none; border: 1px solid #999; background: #f5f5f5; color: #222; }
+    .messages { color: #0a662e; }
+
+    .ng-word {
+      color: red;
+      font-weight: bold;
+      background-color: #ffe5e5;
+    }
+    
+  </style>
+</head>
+<body>
+  <h1>Open側 Django</h1>
+
+	<div class="nav" style="display:flex; align-items:center;">
+	  <!-- 左側 -->
+	  <div>
+	    <a href="{% url 'open_index' %}">prompt一覧</a>
+	    <a href="/admin/">管理</a>
+	  </div>
+
+	  <!-- 右側 -->
+	  <div style="margin-left:auto;">
+	    {% if user.is_authenticated %}
+	      <strong>{{ user.username }}</strong>
+
+	      <form method="post" action="{% url 'logout' %}" style="display:inline;">
+	        {% csrf_token %}
+	        <button type="submit">ログアウト</button>
+	      </form>
+	    {% else %}
+	      <a href="{% url 'login' %}">ログイン</a>
+	    {% endif %}
+	  </div>
+	</div>
+
+  {% if messages %}
+  <ul class="messages">
+    {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% block content %}{% endblock %}
+</body>
+</html>

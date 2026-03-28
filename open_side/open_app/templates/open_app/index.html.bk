@@ -1,0 +1,39 @@
+{% extends 'open_app/base.html' %}
+{% block content %}
+<div class="box">
+  <h2>DMZのprompt一覧</h2>
+<table>
+  <thead>
+    <tr>
+      <th>受付番号</th>
+      <th>プロンプトファイル</th>
+      <th>結果ファイル</th>
+      <th>処理者</th>
+      <th>保存日時</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for log in logs %}
+    <tr>
+      <td>{{ log.request_no }}</td>
+      <td>
+        {% if log.prompt_exists %}
+          <a href="/prompt/{{ log.prompt_filename }}/">{{ log.prompt_filename }}</a>
+        {% else %}
+          {{ log.prompt_filename }} （ファイルなし）
+        {% endif %}
+      </td>
+      <td>{{ log.result_filename }}</td>
+      <td>{{ log.processed_by }}</td>
+      <td>{{ log.saved_at }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="5">表示できるデータはありません。</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>実施権限ページ</title>
+</head>
+<body>
+    <h1>実施権限があるユーザーだけが使えるページ</h1>
+
+    <p>この画面は can_execute_system 権限が必要です。</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p style="color: green;">{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">実施する</button>
+    </form>
+</body>
+</html>

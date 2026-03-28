@@ -1,0 +1,45 @@
+{% extends 'open_app/base.html' %}
+{% block content %}
+<div class="box">
+  <h2>DMZのprompt一覧</h2>
+
+
+  <table>
+    <thead>
+
+      <tr>
+        <th>ファイル名</th>
+        {% if is_admin %}
+          <th>作者</th>
+          <th>ID4桁</th>
+        {% endif %}
+        <th>更新日時</th>
+        <th>サイズ</th>
+        <th>操作</th>
+      </tr>
+    
+    </thead>
+  <tbody>
+   
+    {% for row in files %}
+    <tr>
+      <td><a href="{% url 'open_prompt_detail' row.name %}">{{ row.name }}</a></td>
+      {% if is_admin %}
+        <td>{{ row.owner_name }}</td>
+        <td>{{ row.owner_code }}</td>
+      {% endif %}
+      <td>{{ row.mtime }}</td>
+      <td>{{ row.size }}</td>
+      <td><a href="{% url 'open_prompt_delete' row.name %}">削除</a></td>
+    </tr>
+
+    {% empty %}
+    <tr>
+      <td colspan="{% if is_admin %}5{% else %}4{% endif %}">表示できるファイルはありません。</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+</div>
+{% endblock %}

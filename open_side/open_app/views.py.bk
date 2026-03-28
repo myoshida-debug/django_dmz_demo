@@ -1,0 +1,72 @@
+from django.contrib import messages
+#from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
+from django.shortcuts import redirect, render
+from .forms import ResultPasteForm
+from .models import OpenProcessingLog
+from .services import list_prompt_files, get_prompt_file, parse_prompt, save_result_file
+
+@login_required
+@permission_required("accounts.can_execute_system", raise_exception=True)
+def index(request):
+    if request.user.is_superuser or request.user.is_staff:
+        logs = list(OpenProcessingLog.objects.all())
+    else:
+        logs = list(OpenProcessingLog.objects.filter(processed_by=request.user))
+
+    existing_files = {row["name"] for row in list_prompt_files()}
+
+    for log in logs:
+        log.prompt_exists = log.prompt_filename in existing_files
+
+    return render(request, "open_app/index.html", {"logs": logs})
+
+@login_required
+@permission_required("accounts.can_execute_system", raise_exception=True)
+def prompt_detail(request, filename):
+    if not (request.user.is_superuser or request.user.is_staff):
+        exists = OpenProcessingLog.objects.filter(
+            prompt_filename=filename,
+            processed_by=request.user,
+        ).exists()
+
+        if not exists:
+            raise Http404("閲覧権限がありません")
+
+    try:
+        path = get_prompt_file(filename)
+    except FileNotFoundError:
+        raise Http404("対象の prompt ファイルは存在しません")
+
+    content = path.read_text(encoding="utf-8")
+    parsed = parse_prompt(content)
+
+    if request.method == "POST":
+        form = ResultPasteForm(request.POST)
+        if form.is_valid():
+            result_path = save_result_file(
+                request_no=parsed["request_no"],
+                filename=parsed["output_filename"],
+                result_text=form.cleaned_data["result_text"],
+                prompt_filename=filename,
+            )
+            OpenProcessingLog.objects.create(
+                request_no=parsed["request_no"],
+                prompt_filename=filename,
+                result_filename=result_path.name,
+                processed_by=request.user,
+            )
+            messages.success(request, f"{result_path.name} をDMZへ保存しました。")
+            return redirect("open_index")
+    else:
+        form = ResultPasteForm()
+
+    return render(
+        request,
+        "open_app/detail.html",
+        {
+            "filename": filename,
+            "parsed": parsed,
+            "form": form,
+        },
+    )

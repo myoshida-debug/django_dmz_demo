@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>閲覧権限ページ</title>
+</head>
+<body>
+    <h1>閲覧権限があるユーザーだけが見られるページ</h1>
+
+    <p>この画面は can_view_system 権限が必要です。</p>
+
+    {% if perms.accounts.can_execute_system %}
+        <p><a href="{% url 'protected_execute_page' %}">実施画面へ</a></p>
+    {% endif %}
+</body>
+</html>

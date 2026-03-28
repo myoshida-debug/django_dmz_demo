@@ -1,0 +1,22 @@
+# 仮想環境
+env/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Django
+db.sqlite3
+
+# OS
+.DS_Store
+
+# logs
+*.log
+
+# VSCode
+.vscode/
+
+# その他
+*.sqlite3

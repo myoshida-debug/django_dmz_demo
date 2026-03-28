@@ -1,0 +1,58 @@
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, permission_required
+from django.shortcuts import redirect, render
+from django.http import Http404
+
+from .forms import ResultPasteForm
+from .models import OpenProcessingLog
+from .services import list_prompt_files, get_prompt_file, parse_prompt, save_result_file
+
+@login_required
+@permission_required("accounts.can_execute_system", raise_exception=True)
+def index(request):
+    files = list_prompt_files()
+    return render(request, "open_app/index.html", {"files": files})
+
+@login_required
+@permission_required("accounts.can_execute_system", raise_exception=True)
+def prompt_detail(request, filename):
+    try:
+        path = get_prompt_file(filename)
+    except FileNotFoundError:
+        raise Http404("対象の prompt ファイルは存在しません")
+
+    content = path.read_text(encoding="utf-8")
+    parsed = parse_prompt(content)
+
+    if request.method == "POST":
+        form = ResultPasteForm(request.POST)
+        if form.is_valid():
+            result_path = save_result_file(
+                request_no=parsed["request_no"],
+                filename=parsed["output_filename"],
+                result_text=form.cleaned_data["result_text"],
+                prompt_filename=filename,
+            )
+            OpenProcessingLog.objects.create(
+                request_no=parsed["request_no"],
+                prompt_filename=filename,
+                result_filename=result_path.name,
+                processed_by=request.user,
+            )
+            messages.success(request, f"{result_path.name} をDMZへ保存しました。")
+            return redirect("open_index")
+    else:
+        form = ResultPasteForm()
+
+    back_url = request.GET.get("next") or request.META.get("HTTP_REFERER") or ""
+
+    return render(
+        request,
+        "open_app/detail.html",
+        {
+            "filename": filename,
+            "parsed": parsed,
+            "form": form,
+            "back_url": back_url,
+        },
+    )

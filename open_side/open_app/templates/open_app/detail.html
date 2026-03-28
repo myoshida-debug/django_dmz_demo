@@ -1,0 +1,161 @@
+{% extends 'open_app/base.html' %}
+{% block content %}
+<div class="box">
+  <h2>{{ parsed.request_no }} / {{ parsed.doc_type }}</h2>
+  <p>保存先ファイル名: <strong>{{ parsed.output_filename }}</strong></p>
+
+<div class="box">
+  <h3>メタ情報</h3>
+  <p>受付番号: {{ meta.request_no|default:parsed.request_no }}</p>
+  <p>4桁ID: {{ meta.user_code|default:"-" }}</p>
+  <p>文書種別: {{ meta.document_type_display|default:"-" }}</p>
+  <p>テンプレート: {{ meta.template_name|default:"-" }}</p>
+  <p>テンプレート版: {{ meta.template_version|default:"-" }}</p>
+  <p>長さ種別: {{ meta.length_type|default:"-" }}</p>
+</div>
+
+<div class="box">
+  <h3>検品結果</h3>
+  {% if quality_check %}
+    <p>スコア: {{ quality_check.check_score }}</p>
+    <p>
+      判定:
+      {% if quality_check.has_error %}
+        <strong style="color: red;">警告あり</strong>
+      {% else %}
+        <strong style="color: green;">問題なし</strong>
+      {% endif %}
+    </p>
+    <pre>{{ quality_check.error_details|default:"-" }}</pre>
+  {% else %}
+    <p>まだ検品結果はありません。</p>
+  {% endif %}
+</div>
+
+
+
+</div>
+<div class="box">
+  <h3>ChatGPTへ送るプロンプト</h3>
+  <textarea id="prompt-box" rows="16" readonly>{{ parsed.prompt_body }}</textarea>
+  <div class="actions">
+    <button type="button" onclick="copyPrompt()">クリップボードへコピー</button>
+    <a class="button" target="_blank" rel="noopener noreferrer" href="https://chatgpt.com/">ChatGPTを開く</a>
+  </div>
+</div>
+<div class="box">
+  <h3>ChatGPTの結果を貼り付け</h3>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.result_text }}
+    <div class="actions">
+      <button type="button" onclick="pasteResult()">クリップボードから貼り付け</button>
+      <button type="button" onclick="clearResult()">クリア</button>
+      <button type="submit">DMZへ結果ファイルを保存</button>
+    </div>
+  </form>
+
+  <div class="actions">
+    {% if back_url %}
+      <a class="button" href="{{ back_url }}">一覧へ戻る</a>
+    {% else %}
+      <a class="button" href="{% url 'open_index' %}">一覧へ戻る</a>
+    {% endif %}
+
+  </div>
+
+</div>
+
+<div class="box">
+  <h3>NG表現チェック</h3>
+  <p>「考えられる」「可能性がある」「疑われる」を赤で表示します。</p>
+
+  <div id="ng-preview" style="white-space: pre-wrap; border: 1px solid #ccc; padding: 8px; min-height: 120px;"></div>
+</div>
+
+
+<script>
+async function copyPrompt() {
+  const box = document.getElementById('prompt-box');
+  await navigator.clipboard.writeText(box.value);
+  alert('プロンプトをクリップボードへコピーしました。');
+}
+
+async function clearResult() {
+  const box = document.getElementById('id_result_text');
+  if (confirm('入力内容をクリアしますか？')) {
+    box.value = '';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    box.focus();
+  }
+}
+
+async function pasteResult() {
+  try {
+    const box = document.getElementById('id_result_text');
+    const text = await navigator.clipboard.readText();
+    box.value = text;
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+  } catch (e) {
+    alert('クリップボードの読込に失敗しました。ブラウザ権限を確認してください。');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const box = document.getElementById('id_result_text');
+  const clearBtn = document.querySelector('[onclick="clearResult()"]');
+
+  if (!box || !clearBtn) return;
+
+  // 初期状態
+  clearBtn.style.display = box.value ? 'inline-block' : 'none';
+
+  // 入力時
+  box.addEventListener('input', () => {
+    clearBtn.style.display = box.value ? 'inline-block' : 'none';
+  });
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const textarea = document.getElementById("id_result_text");
+  const preview = document.getElementById("ng-preview");
+
+  if (!textarea || !preview) return;
+
+  const ngWords = [
+    "考えられる",
+    "可能性がある",
+    "疑われる"
+  ];
+
+  function escapeHtml(text) {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function highlightNgWords(text) {
+    let html = escapeHtml(text);
+
+    ngWords.forEach(word => {
+      const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escapedWord, "g");
+      html = html.replace(regex, `<span class="ng-word">${word}</span>`);
+    });
+
+    return html;
+  }
+
+  function updatePreview() {
+    preview.innerHTML = highlightNgWords(textarea.value || "");
+  }
+
+  textarea.addEventListener("input", updatePreview);
+  updatePreview();
+});
+</script>
+
+{% endblock %}

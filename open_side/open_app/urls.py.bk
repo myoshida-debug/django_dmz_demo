@@ -1,0 +1,7 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.index, name='open_index'),
+    path('prompt/<str:filename>/', views.prompt_detail, name='open_prompt_detail'),
+]

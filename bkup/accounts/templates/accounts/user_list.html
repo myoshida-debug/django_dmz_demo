@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ユーザー一覧</title>
+</head>
+<body>
+    <h1>ユーザー一覧</h1>
+
+    <p>
+        <a href="{% url 'user_create' %}">新規ユーザー登録</a> |
+        <a href="{% url 'logout' %}">ログアウト</a>
+    </p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p style="color: green;">{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <table border="1" cellpadding="6">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>ユーザーID</th>
+                <th>氏名</th>
+                <th>メール</th>
+                <th>有効</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ u.id }}</td>
+                <td>{{ u.username }}</td>
+                <td>{{ u.last_name }} {{ u.first_name }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.is_active|yesno:"有効,無効" }}</td>
+                <td>
+                    <a href="{% url 'user_edit' u.pk %}">編集</a> |
+                    <a href="{% url 'user_permissions' u.pk %}">権限設定</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6">ユーザーが存在しません。</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
